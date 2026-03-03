@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { getUsers, getRoles, getResourceGroups, createAssignment } from '../services/api';
+import { buildScope } from '../utils/azure';
 import type { AzureUser, RoleDefinition, ResourceGroup } from '../types';
 
 interface Props {
@@ -16,8 +17,9 @@ export default function AssignRoleModal({ subscriptionId, onClose, onSuccess }: 
   const [selectedRole, setSelectedRole] = useState('');
   const [selectedRg, setSelectedRg] = useState('');
 
+  // Isolated query key ('users-modal') so it doesn't pollute the Users page cache
   const { data: users = [] } = useQuery<AzureUser[]>({
-    queryKey: ['users', search],
+    queryKey: ['users-modal', search],
     queryFn: () => getUsers(search),
     enabled: search.length >= 2,
   });
@@ -37,9 +39,7 @@ export default function AssignRoleModal({ subscriptionId, onClose, onSuccess }: 
     onSuccess,
   });
 
-  const scope = selectedRg
-    ? `/subscriptions/${subscriptionId}/resourceGroups/${selectedRg}`
-    : `/subscriptions/${subscriptionId}`;
+  const scope = buildScope(subscriptionId, selectedRg || undefined);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -145,7 +145,7 @@ export default function AssignRoleModal({ subscriptionId, onClose, onSuccess }: 
 
           {mutation.isError && (
             <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">
-              {(mutation.error as Error).message}
+              {mutation.error instanceof Error ? mutation.error.message : 'An error occurred'}
             </p>
           )}
 

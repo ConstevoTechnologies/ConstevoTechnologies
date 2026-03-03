@@ -1,21 +1,10 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getAuditLog } from '../services/api';
-import type { AuditLogEntry } from '../types';
+import ActionBadge from '../components/ActionBadge';
+import { extractRoleName, shortId } from '../utils/azure';
 
 const PAGE_SIZE = 20;
-
-function ActionBadge({ action }: { action: AuditLogEntry['action'] }) {
-  return (
-    <span
-      className={`inline-block text-xs font-semibold px-2 py-0.5 rounded-full ${
-        action === 'ASSIGN' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-      }`}
-    >
-      {action}
-    </span>
-  );
-}
 
 export default function AuditLog() {
   const [page, setPage] = useState(0);
@@ -62,15 +51,9 @@ export default function AuditLog() {
                 ) : (
                   logs.map((log) => (
                     <tr key={log.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3">
-                        <ActionBadge action={log.action} />
-                      </td>
-                      <td className="px-4 py-3 font-mono text-xs text-gray-600">
-                        {log.principalId.slice(0, 8)}…
-                      </td>
-                      <td className="px-4 py-3 font-mono text-xs text-gray-600">
-                        {log.roleDefinitionId.split('/').at(-1)}
-                      </td>
+                      <td className="px-4 py-3"><ActionBadge action={log.action} /></td>
+                      <td className="px-4 py-3 font-mono text-xs text-gray-600">{shortId(log.principalId)}</td>
+                      <td className="px-4 py-3 font-mono text-xs text-gray-600">{extractRoleName(log.roleDefinitionId)}</td>
                       <td className="px-4 py-3 text-xs text-gray-500 max-w-xs truncate">{log.scope}</td>
                       <td className="px-4 py-3 text-xs text-gray-500">{log.performedBy}</td>
                       <td className="px-4 py-3 text-xs text-gray-400 whitespace-nowrap">
@@ -84,7 +67,6 @@ export default function AuditLog() {
           </div>
         )}
 
-        {/* Pagination */}
         {pageCount > 1 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 text-sm">
             <button
@@ -94,9 +76,7 @@ export default function AuditLog() {
             >
               Previous
             </button>
-            <span className="text-gray-500">
-              Page {page + 1} of {pageCount}
-            </span>
+            <span className="text-gray-500">Page {page + 1} of {pageCount}</span>
             <button
               onClick={() => setPage((p) => p + 1)}
               disabled={page + 1 >= pageCount}

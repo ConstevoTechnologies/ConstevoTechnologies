@@ -33,11 +33,16 @@ assignmentsRouter.get('/', async (req, res) => {
   res.json(assignments);
 });
 
+const PRINCIPAL_TYPES = ['User', 'Group', 'ServicePrincipal'] as const;
+type PrincipalType = (typeof PRINCIPAL_TYPES)[number];
+
 const createSchema = z.object({
   subscriptionId: z.string().uuid(),
   principalId: z.string().uuid(),
   roleDefinitionId: z.string().min(1),
   scope: z.string().min(1),
+  // Allow assigning roles to users, groups, or service principals
+  principalType: z.enum(PRINCIPAL_TYPES).default('User'),
   performedBy: z.string().optional(),
 });
 
@@ -50,7 +55,7 @@ assignmentsRouter.post('/', async (req, res) => {
   const assignment = await client.roleAssignments.create(body.scope, assignmentName, {
     principalId: body.principalId,
     roleDefinitionId: body.roleDefinitionId,
-    principalType: 'User',
+    principalType: body.principalType as PrincipalType,
   });
 
   await prisma.auditLog.create({

@@ -1,13 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { MagnifyingGlassIcon, ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { getUsers, getSubscriptions, getAssignments } from '../services/api';
+import { extractRoleName } from '../utils/azure';
 import type { AzureUser, Subscription } from '../types';
 
 export default function Users() {
-  const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selectedSub, setSelectedSub] = useState('');
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
+
+  // Debounce search to avoid spamming the Graph API on every keystroke
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedSearch(searchInput), 350);
+    return () => clearTimeout(id);
+  }, [searchInput]);
 
   const { data: subscriptions = [] } = useQuery<Subscription[]>({
     queryKey: ['subscriptions'],
@@ -15,14 +23,16 @@ export default function Users() {
   });
 
   const { data: users = [], isLoading } = useQuery<AzureUser[]>({
-    queryKey: ['users', search],
-    queryFn: () => getUsers(search || undefined),
+    queryKey: ['users', debouncedSearch],
+    queryFn: () => getUsers(debouncedSearch || undefined),
+    staleTime: 60_000, // users don't change that often
   });
 
   const { data: userAssignments = [] } = useQuery({
     queryKey: ['assignments-for-user', expandedUserId, selectedSub],
     queryFn: () => getAssignments(selectedSub, undefined, expandedUserId!),
     enabled: !!expandedUserId && !!selectedSub,
+    staleTime: 30_000,
   });
 
   const toggle = (userId: string) =>
@@ -41,8 +51,8 @@ export default function Users() {
           <input
             type="text"
             placeholder="Search by name or email…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
             className="border border-gray-300 rounded-lg pl-9 pr-3 py-2 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
@@ -68,7 +78,7 @@ export default function Users() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide w-6"></th>
+                <th className="px-4 py-3 w-6"></th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Name</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Email</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Job Title</th>
@@ -78,16 +88,12 @@ export default function Users() {
             <tbody className="divide-y divide-gray-100">
               {users.map((user) => (
                 <React.Fragment key={user.id}>
-                  <tr
-                    onClick={() => toggle(user.id)}
-                    className="hover:bg-gray-50 cursor-pointer"
-                  >
+                  <tr onClick={() => toggle(user.id)} className="hover:bg-gray-50 cursor-pointer">
                     <td className="px-4 py-3 text-gray-400">
-                      {expandedUserId === user.id ? (
-                        <ChevronDownIcon className="h-4 w-4" />
-                      ) : (
-                        <ChevronRightIcon className="h-4 w-4" />
-                      )}
+                      {expandedUserId === user.id
+                        ? <ChevronDownIcon className="h-4 w-4" />
+                        : <ChevronRightIcon className="h-4 w-4" />
+                      }
                     </td>
                     <td className="px-4 py-3 font-medium text-gray-900">{user.displayName}</td>
                     <td className="px-4 py-3 text-gray-500">{user.userPrincipalName}</td>
@@ -112,7 +118,7 @@ export default function Users() {
                             <ul className="space-y-1">
                               {userAssignments.map((a) => (
                                 <li key={a.id} className="text-xs font-mono text-gray-700 flex gap-2">
-                                  <span className="text-blue-600">{a.roleDefinitionId.split('/').at(-1)}</span>
+                                  <span className="text-blue-600">{extractRoleName(a.roleDefinitionId)}</span>
                                   <span className="text-gray-400">→</span>
                                   <span className="text-gray-600 truncate">{a.scope}</span>
                                 </li>

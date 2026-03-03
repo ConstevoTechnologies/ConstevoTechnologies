@@ -1,12 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import {
-  HomeIcon,
   ShieldCheckIcon,
   ClipboardDocumentListIcon,
   ServerStackIcon,
 } from '@heroicons/react/24/outline';
 import { getSubscriptions, getAuditLog } from '../services/api';
-import type { AuditLogEntry } from '../types';
+import ActionBadge from '../components/ActionBadge';
+import { shortId } from '../utils/azure';
 
 function StatCard({
   label,
@@ -30,12 +30,6 @@ function StatCard({
       </div>
     </div>
   );
-}
-
-function actionBadge(action: AuditLogEntry['action']) {
-  return action === 'ASSIGN'
-    ? 'bg-green-100 text-green-700'
-    : 'bg-red-100 text-red-700';
 }
 
 export default function Dashboard() {
@@ -80,7 +74,7 @@ export default function Dashboard() {
       {/* Subscriptions list */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-          <HomeIcon className="h-4 w-4" />
+          <ServerStackIcon className="h-4 w-4" />
           Subscriptions
         </h3>
         {subscriptions.length === 0 ? (
@@ -107,13 +101,9 @@ export default function Dashboard() {
             {audit.data.map((log) => (
               <li key={log.id} className="py-3 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-2 min-w-0">
-                  <span
-                    className={`shrink-0 inline-block text-xs font-semibold px-2 py-0.5 rounded-full ${actionBadge(log.action)}`}
-                  >
-                    {log.action}
-                  </span>
+                  <ActionBadge action={log.action} />
                   <span className="text-sm text-gray-700 font-mono truncate">
-                    {log.principalId.slice(0, 8)}…
+                    {shortId(log.principalId)}
                   </span>
                   <span className="text-xs text-gray-400 truncate hidden sm:block">{log.scope}</span>
                 </div>

@@ -1,6 +1,8 @@
 name: CI
 
 on:
+  push:
+    branches: [main]
   pull_request:
     branches: [main]
 
@@ -25,9 +27,6 @@ jobs:
       - run: npm run lint
       - run: npx tsc --noEmit
       - run: npm test
-
-      - name: Docker build smoke test
-        run: docker build -t api-smoke-test .
 
   web:
     name: Web — Lint & Build

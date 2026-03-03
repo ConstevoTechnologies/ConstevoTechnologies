@@ -8,6 +8,7 @@ import {
   deleteAssignment,
 } from '../services/api';
 import AssignRoleModal from '../components/AssignRoleModal';
+import { buildScope, extractRoleName, shortId } from '../utils/azure';
 import type { Subscription, ResourceGroup, RoleAssignment } from '../types';
 
 export default function Assignments() {
@@ -27,11 +28,7 @@ export default function Assignments() {
     enabled: !!selectedSub,
   });
 
-  const scope = selectedRg
-    ? `/subscriptions/${selectedSub}/resourceGroups/${selectedRg}`
-    : selectedSub
-    ? `/subscriptions/${selectedSub}`
-    : undefined;
+  const scope = selectedSub ? buildScope(selectedSub, selectedRg || undefined) : undefined;
 
   const { data: assignments = [], isLoading } = useQuery<RoleAssignment[]>({
     queryKey: ['assignments', scope],
@@ -39,25 +36,24 @@ export default function Assignments() {
     enabled: !!selectedSub,
   });
 
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ['assignments', scope] });
+    queryClient.invalidateQueries({ queryKey: ['audit'] });
+  };
+
   const deleteMutation = useMutation({
     mutationFn: ({ name, assignmentScope }: { name: string; assignmentScope: string }) =>
       deleteAssignment(name, selectedSub, assignmentScope),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['assignments'] });
-      queryClient.invalidateQueries({ queryKey: ['audit'] });
-    },
+    onSuccess: invalidate,
   });
 
-  const handleDelete = (assignment: RoleAssignment) => {
-    if (!confirm(`Remove this role assignment?\n\nPrincipal: ${assignment.principalId}\nScope: ${assignment.scope}`)) {
-      return;
-    }
-    deleteMutation.mutate({ name: assignment.name, assignmentScope: assignment.scope });
+  const handleDelete = (a: RoleAssignment) => {
+    if (!confirm(`Remove this role assignment?\n\nPrincipal: ${a.principalId}\nScope: ${a.scope}`)) return;
+    deleteMutation.mutate({ name: a.name, assignmentScope: a.scope });
   };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Role Assignments</h2>
@@ -73,7 +69,6 @@ export default function Assignments() {
         </button>
       </div>
 
-      {/* Filters */}
       <div className="flex gap-3 flex-wrap">
         <select
           value={selectedSub}
@@ -99,12 +94,9 @@ export default function Assignments() {
         </select>
       </div>
 
-      {/* Table */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         {!selectedSub ? (
-          <div className="p-16 text-center text-gray-400 text-sm">
-            Select a subscription to view role assignments
-          </div>
+          <div className="p-16 text-center text-gray-400 text-sm">Select a subscription to view role assignments</div>
         ) : isLoading ? (
           <div className="p-16 text-center text-gray-400 text-sm">Loading assignments…</div>
         ) : assignments.length === 0 ? (
@@ -116,25 +108,21 @@ export default function Assignments() {
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Principal ID</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Type</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Role ID</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Role</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Scope</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide w-12"></th>
+                  <th className="px-4 py-3 w-12"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {assignments.map((a) => (
                   <tr key={a.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 font-mono text-xs text-gray-600">
-                      {a.principalId.slice(0, 8)}…
-                    </td>
+                    <td className="px-4 py-3 font-mono text-xs text-gray-600">{shortId(a.principalId)}</td>
                     <td className="px-4 py-3">
                       <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full font-medium">
                         {a.principalType}
                       </span>
                     </td>
-                    <td className="px-4 py-3 font-mono text-xs text-gray-600">
-                      {a.roleDefinitionId.split('/').at(-1)}
-                    </td>
+                    <td className="px-4 py-3 font-mono text-xs text-gray-600">{extractRoleName(a.roleDefinitionId)}</td>
                     <td className="px-4 py-3 text-xs text-gray-500 max-w-xs truncate">{a.scope}</td>
                     <td className="px-4 py-3">
                       <button
@@ -158,11 +146,7 @@ export default function Assignments() {
         <AssignRoleModal
           subscriptionId={selectedSub}
           onClose={() => setShowModal(false)}
-          onSuccess={() => {
-            setShowModal(false);
-            queryClient.invalidateQueries({ queryKey: ['assignments'] });
-            queryClient.invalidateQueries({ queryKey: ['audit'] });
-          }}
+          onSuccess={() => { setShowModal(false); invalidate(); }}
         />
       )}
     </div>

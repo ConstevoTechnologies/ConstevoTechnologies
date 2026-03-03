@@ -42,6 +42,7 @@ export const createAssignment = (data: {
   principalId: string;
   roleDefinitionId: string;
   scope: string;
+  principalType?: 'User' | 'Group' | 'ServicePrincipal';
 }) => api.post<RoleAssignment>('/assignments', data).then((r) => r.data);
 
 export const deleteAssignment = (assignmentName: string, subscriptionId: string, scope: string) =>
