@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Azure FinOps Dashboard</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <svg class="logo-icon" viewBox="0 0 32 32" fill="none">
+          <path d="M16 2L4 8v8c0 7.18 5.15 13.89 12 15.93C22.85 29.89 28 23.18 28 16V8L16 2z" fill="url(#shield-gradient)"/>
+          <path d="M12 16l3 3 5-6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <defs>
+            <linearGradient id="shield-gradient" x1="4" y1="2" x2="28" y2="32" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#0078D4"/>
+              <stop offset="1" stop-color="#50E6FF"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <span class="logo-text">Azure FinOps</span>
+      </div>
+      <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <nav class="sidebar-nav">
+      <ul>
+        <li class="nav-item active" data-page="dashboard">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          <span>Dashboard</span>
+        </li>
+        <li class="nav-item" data-page="resources">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+          <span>Resources</span>
+        </li>
+        <li class="nav-item" data-page="recommendations">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <span>Recommendations</span>
+          <span class="nav-badge" id="recBadge">0</span>
+        </li>
+        <li class="nav-item" data-page="anomalies">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span>Anomalies</span>
+          <span class="nav-badge danger" id="anomBadge">0</span>
+        </li>
+        <li class="nav-item" data-page="budgets">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <span>Budgets</span>
+        </li>
+      </ul>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="subscription-selector">
+        <label>Subscription</label>
+        <select id="subscriptionSelect">
+          <option value="prod">Production — MSDN</option>
+          <option value="dev">Development — Pay-as-you-Go</option>
+          <option value="staging">Staging — EA</option>
+        </select>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main" id="main">
+
+    <!-- Top Bar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <h1 class="page-title" id="pageTitle">Dashboard</h1>
+        <div class="date-range">
+          <button class="date-btn active" data-range="30">30 days</button>
+          <button class="date-btn" data-range="60">60 days</button>
+          <button class="date-btn" data-range="90">90 days</button>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <button class="btn btn-secondary" id="exportBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export CSV
+        </button>
+        <button class="btn btn-primary" id="refreshBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          Refresh
+        </button>
+        <div class="avatar">CT</div>
+      </div>
+    </header>
+
+    <!-- Pages -->
+    <div class="page-content">
+
+      <!-- ===== DASHBOARD PAGE ===== -->
+      <section class="page active" id="page-dashboard">
+
+        <!-- Summary Cards -->
+        <div class="cards-grid">
+          <div class="card card-primary">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </div>
+            <div class="card-info">
+              <span class="card-label">Total Cost (30d)</span>
+              <span class="card-value" id="totalCost">$0</span>
+              <span class="card-delta negative" id="costDelta">+12.4% vs last period</span>
+            </div>
+          </div>
+          <div class="card card-success">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+            </div>
+            <div class="card-info">
+              <span class="card-label">Potential Savings</span>
+              <span class="card-value success" id="potentialSavings">$0</span>
+              <span class="card-delta positive" id="savingsPct">of current spend</span>
+            </div>
+          </div>
+          <div class="card card-warning">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+            <div class="card-info">
+              <span class="card-label">Bad Configurations</span>
+              <span class="card-value warning" id="badConfigs">0</span>
+              <span class="card-delta neutral" id="badConfigsLabel">resources need attention</span>
+            </div>
+          </div>
+          <div class="card card-info">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            </div>
+            <div class="card-info">
+              <span class="card-label">Active Resources</span>
+              <span class="card-value" id="activeResources">0</span>
+              <span class="card-delta neutral" id="resourcesLabel">across all regions</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="charts-row">
+          <div class="chart-card large">
+            <div class="chart-header">
+              <h3>Cost Over Time</h3>
+              <div class="chart-legend" id="timeChartLegend"></div>
+            </div>
+            <div class="chart-container">
+              <canvas id="costTimeChart"></canvas>
+            </div>
+          </div>
+          <div class="chart-card small">
+            <div class="chart-header">
+              <h3>Cost by Service</h3>
+            </div>
+            <div class="chart-container donut-container">
+              <canvas id="costServiceChart"></canvas>
+              <div class="donut-center" id="donutCenter"></div>
+            </div>
+            <div class="donut-legend" id="donutLegend"></div>
+          </div>
+        </div>
+
+        <!-- Alerts & Quick Wins -->
+        <div class="bottom-row">
+          <div class="panel">
+            <div class="panel-header">
+              <h3>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+                Bad Configurations
+              </h3>
+              <button class="link-btn" data-page="recommendations">View all</button>
+            </div>
+            <div class="alerts-list" id="alertsList"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-header">
+              <h3>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                Top Quick Wins
+              </h3>
+            </div>
+            <div class="quick-wins-list" id="quickWinsList"></div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ===== RESOURCES PAGE ===== -->
+      <section class="page" id="page-resources">
+        <div class="toolbar">
+          <div class="search-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="resourceSearch" placeholder="Search resources..." />
+          </div>
+          <div class="filter-row">
+            <select id="filterType" class="filter-select">
+              <option value="">All Types</option>
+              <option value="vm">Virtual Machines</option>
+              <option value="storage">Storage</option>
+              <option value="sql">SQL Databases</option>
+              <option value="aks">Kubernetes</option>
+              <option value="appservice">App Services</option>
+              <option value="network">Networking</option>
+            </select>
+            <select id="filterRegion" class="filter-select">
+              <option value="">All Regions</option>
+              <option value="eastus">East US</option>
+              <option value="westus">West US</option>
+              <option value="westeurope">West Europe</option>
+              <option value="eastasia">East Asia</option>
+            </select>
+            <select id="filterStatus" class="filter-select">
+              <option value="">All Status</option>
+              <option value="critical">Critical</option>
+              <option value="warning">Warning</option>
+              <option value="ok">OK</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="table-card">
+          <table class="resource-table" id="resourceTable">
+            <thead>
+              <tr>
+                <th>Resource</th>
+                <th>Type</th>
+                <th>Region</th>
+                <th>Monthly Cost</th>
+                <th>Usage</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="resourceTableBody"></tbody>
+          </table>
+          <div class="table-footer">
+            <span id="tableCount"></span>
+            <div class="pagination" id="pagination"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== RECOMMENDATIONS PAGE ===== -->
+      <section class="page" id="page-recommendations">
+        <div class="rec-header">
+          <div class="rec-summary" id="recSummary"></div>
+        </div>
+        <div class="rec-filters">
+          <button class="rec-filter-btn active" data-filter="all">All</button>
+          <button class="rec-filter-btn" data-filter="critical">Critical</button>
+          <button class="rec-filter-btn" data-filter="high">High Impact</button>
+          <button class="rec-filter-btn" data-filter="medium">Medium</button>
+          <button class="rec-filter-btn" data-filter="low">Low</button>
+        </div>
+        <div class="rec-list" id="recList"></div>
+      </section>
+
+      <!-- ===== ANOMALIES PAGE ===== -->
+      <section class="page" id="page-anomalies">
+        <div class="anomaly-banner" id="anomalyBanner"></div>
+        <div class="anomaly-grid" id="anomalyGrid"></div>
+      </section>
+
+      <!-- ===== BUDGETS PAGE ===== -->
+      <section class="page" id="page-budgets">
+        <div class="budgets-top">
+          <button class="btn btn-primary" id="addBudgetBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Budget
+          </button>
+        </div>
+        <div class="budgets-grid" id="budgetsGrid"></div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Resource Detail Modal -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal" id="resourceModal">
+      <div class="modal-header">
+        <div>
+          <h2 id="modalTitle">Resource Details</h2>
+          <p id="modalSubtitle" class="modal-subtitle"></p>
+        </div>
+        <button class="modal-close" id="modalClose">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toast"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/recommendations.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
