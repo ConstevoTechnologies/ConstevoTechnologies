@@ -112,8 +112,8 @@
             <div class="card-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
             </div>
-            <div class="card-info">
-              <span class="card-label">Total Cost (30d)</span>
+            <div class="card-body">
+              <span class="card-label" id="totalCostLabel">Total Cost (30d)</span>
               <span class="card-value" id="totalCost">$0</span>
               <span class="card-delta negative" id="costDelta">+12.4% vs last period</span>
             </div>
@@ -122,7 +122,7 @@
             <div class="card-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
             </div>
-            <div class="card-info">
+            <div class="card-body">
               <span class="card-label">Potential Savings</span>
               <span class="card-value success" id="potentialSavings">$0</span>
               <span class="card-delta positive" id="savingsPct">of current spend</span>
@@ -132,7 +132,7 @@
             <div class="card-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             </div>
-            <div class="card-info">
+            <div class="card-body">
               <span class="card-label">Bad Configurations</span>
               <span class="card-value warning" id="badConfigs">0</span>
               <span class="card-delta neutral" id="badConfigsLabel">resources need attention</span>
@@ -142,7 +142,7 @@
             <div class="card-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
             </div>
-            <div class="card-info">
+            <div class="card-body">
               <span class="card-label">Active Resources</span>
               <span class="card-value" id="activeResources">0</span>
               <span class="card-delta neutral" id="resourcesLabel">across all regions</span>
@@ -235,12 +235,12 @@
           <table class="resource-table" id="resourceTable">
             <thead>
               <tr>
-                <th>Resource</th>
+                <th class="sortable" data-col="name">Resource <span class="sort-icon">↕</span></th>
                 <th>Type</th>
                 <th>Region</th>
-                <th>Monthly Cost</th>
-                <th>Usage</th>
-                <th>Status</th>
+                <th class="sortable" data-col="monthlyCost">Monthly Cost <span class="sort-icon">↕</span></th>
+                <th class="sortable" data-col="usage">Usage <span class="sort-icon">↕</span></th>
+                <th class="sortable" data-col="status">Status <span class="sort-icon">↕</span></th>
                 <th>Actions</th>
               </tr>
             </thead>

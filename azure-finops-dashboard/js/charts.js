@@ -5,20 +5,43 @@
 let costTimeChart = null;
 let costServiceChart = null;
 
-function initCharts() {
-  initTimeChart();
+function initCharts(range) {
+  if (typeof Chart === 'undefined') {
+    showChartFallback('costTimeChart', 'Chart library unavailable — check your internet connection.');
+    showChartFallback('costServiceChart', 'Chart library unavailable.');
+    return;
+  }
+  initTimeChart(range || 30);
   initServiceChart();
 }
 
-function initTimeChart() {
+function showChartFallback(canvasId, msg) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const wrap = canvas.parentElement;
+  canvas.style.display = 'none';
+  if (!wrap.querySelector('.chart-fallback')) {
+    const div = document.createElement('div');
+    div.className = 'chart-fallback';
+    div.textContent = msg;
+    wrap.appendChild(div);
+  }
+}
+
+function initTimeChart(range) {
   const ctx = document.getElementById('costTimeChart');
   if (!ctx) return;
 
-  const { labels, values } = AZURE_DATA.costTimeSeries;
+  const { labels: allLabels, values: allValues } = AZURE_DATA.costTimeSeries;
+
+  // Slice to requested range from the end
+  const days = Math.min(range, allValues.length);
+  const labels = allLabels.slice(-days);
+  const values = allValues.slice(-days);
 
   // Build gradient
   const gradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 220);
-  gradient.addColorStop(0, 'rgba(0,120,212,0.20)');
+  gradient.addColorStop(0, 'rgba(0,120,212,0.22)');
   gradient.addColorStop(1, 'rgba(0,120,212,0.00)');
 
   if (costTimeChart) costTimeChart.destroy();
@@ -61,7 +84,7 @@ function initTimeChart() {
           ticks: {
             color: '#A19F9D',
             font: { size: 11 },
-            maxTicksLimit: 8,
+            maxTicksLimit: days > 60 ? 10 : 8,
             maxRotation: 0
           },
           border: { display: false }
@@ -79,11 +102,16 @@ function initTimeChart() {
     }
   });
 
-  // Populate legend
-  document.getElementById('timeChartLegend').innerHTML = `
-    <div class="legend-item">
-      <div class="legend-dot" style="background:#0078D4"></div>Daily Spend
-    </div>`;
+  // Legend
+  const legendEl = document.getElementById('timeChartLegend');
+  if (legendEl) {
+    const total = values.reduce((s, v) => s + v, 0);
+    legendEl.innerHTML = `
+      <div class="legend-item">
+        <div class="legend-dot" style="background:#0078D4"></div>Daily Spend
+      </div>
+      <span style="font-size:12px;color:var(--text-muted);margin-left:8px">Total: <strong>${fmt(total)}</strong></span>`;
+  }
 }
 
 function initServiceChart() {

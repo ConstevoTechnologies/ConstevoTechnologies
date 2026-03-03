@@ -312,8 +312,8 @@ body {
 .card-delta.negative { color: var(--danger); }
 .card-delta.neutral { color: var(--text-muted); }
 
-/* Fix card layout for info block */
-.card-info { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+/* Inner card content wrapper */
+.card-body { display: flex; flex-direction: column; flex: 1; min-width: 0; }
 
 /* === Charts === */
 .charts-row {
@@ -342,6 +342,9 @@ body {
 .donut-container { display: flex; align-items: center; justify-content: center; position: relative; }
 .donut-center {
   position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
   text-align: center;
   pointer-events: none;
 }
@@ -524,6 +527,7 @@ body {
   border-bottom: 1px solid var(--border);
   text-transform: uppercase;
   letter-spacing: .4px;
+  white-space: nowrap;
 }
 .resource-table tbody tr {
   border-bottom: 1px solid var(--border);
@@ -984,6 +988,86 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 .fade-in { animation: fadeIn .3s ease forwards; }
+
+/* === Sortable Table === */
+.sortable { cursor: pointer; user-select: none; }
+.sortable:hover { color: var(--azure-blue); }
+.sort-icon { font-size: 10px; opacity: .4; }
+.sortable.asc .sort-icon::after  { content: ' ↑'; opacity: 1; }
+.sortable.desc .sort-icon::after { content: ' ↓'; opacity: 1; }
+.sortable.asc  .sort-icon,
+.sortable.desc .sort-icon { opacity: 0; }
+.sortable.asc,
+.sortable.desc { color: var(--azure-blue); }
+
+/* === Copy CLI Button === */
+.step-code-wrap { position: relative; margin-top: 6px; }
+.copy-btn {
+  position: absolute;
+  top: 6px; right: 6px;
+  background: rgba(80,230,255,.15);
+  border: 1px solid rgba(80,230,255,.3);
+  color: var(--azure-blue-light);
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.copy-btn:hover { background: rgba(80,230,255,.28); }
+.copy-btn.copied { color: #8AE678; border-color: #8AE678; background: rgba(138,230,120,.12); }
+
+/* === Anomaly Actions === */
+.anomaly-actions { display: flex; gap: 8px; margin-top: 12px; }
+.anomaly-btn {
+  flex: 1;
+  padding: 7px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--border-dark);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  transition: all var(--transition);
+}
+.anomaly-btn:hover { border-color: var(--azure-blue); color: var(--azure-blue); }
+.anomaly-btn.primary { background: var(--azure-blue); color: #fff; border-color: var(--azure-blue); }
+.anomaly-btn.primary:hover { background: var(--azure-blue-dark); }
+.anomaly-card.acknowledged { opacity: .55; }
+.anomaly-card.acknowledged .anomaly-btn.primary { background: var(--success); border-color: var(--success); }
+
+/* === Budget Threshold Alert === */
+.budget-alert {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: var(--danger-bg);
+  border: 1px solid #F1707B;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--danger);
+  margin-top: 8px;
+}
+.budget-alert svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+/* === Chart Fallback === */
+.chart-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted);
+  font-size: 13px;
+  text-align: center;
+  padding: 20px;
+}
+
+/* === Loading Spinner (Refresh) === */
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinning { animation: spin .7s linear infinite; }
 
 /* === Responsive === */
 @media (max-width: 1200px) {
