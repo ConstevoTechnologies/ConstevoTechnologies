@@ -158,13 +158,43 @@ function Get-WUServicesStatus {
     foreach ($svc in $services) {
         try {
             $s = Get-Service -Name $svc.Name -ErrorAction Stop
-            $startType = (Get-CimInstance Win32_Service -Filter "Name='$($svc.Name)'").StartMode
+
+            # Récupération du type de démarrage via WMI (robuste)
+            $wmiSvc    = Get-CimInstance Win32_Service -Filter "Name='$($svc.Name)'" -ErrorAction SilentlyContinue
+            $startType = if ($wmiSvc) { $wmiSvc.StartMode } else { "N/A" }
+
             $level = if ($s.Status -eq "Running") { "OK" } else { "WARN" }
             Write-Log ("{0,-45}  État: {1,-10}  Démarrage: {2}" -f `
                 $svc.Label, $s.Status, $startType) $level
+
+        } catch [System.InvalidOperationException] {
+            # Erreur 2182 : service déjà démarré — faux positif, traité comme OK
+            if ($_.Exception.Message -match "2182|already been started|déjà été démarré") {
+                Write-Log ("{0,-45}  État: Running     (déjà en cours, code 2182 — OK)" -f $svc.Label) "OK"
+            } else {
+                Write-Log ("{0,-45}  Erreur: {1}" -f $svc.Label, $_.Exception.Message) "WARN"
+            }
         } catch {
-            Write-Log ("{0,-45}  INTROUVABLE" -f $svc.Label) "ERROR"
+            # Service introuvable (non installé sur cette version de Windows)
+            if ($_.Exception.Message -match "Cannot find any service|introuvable") {
+                Write-Log ("{0,-45}  Non installé sur ce système (ignoré)" -f $svc.Label) "DATA"
+            } else {
+                Write-Log ("{0,-45}  ERREUR: {1}" -f $svc.Label, $_.Exception.Message) "ERROR"
+            }
         }
+    }
+
+    # Vérification complémentaire BITS via COM (détecte les blocages internes)
+    try {
+        $bitsManager = [System.Type]::GetTypeFromProgID("Microsoft.BackgroundCopyManager")
+        if ($bitsManager) {
+            $bitsInstance = [System.Activator]::CreateInstance($bitsManager)
+            $jobEnum = $bitsInstance.EnumJobs(0)
+            $jobCount = $jobEnum.GetCount()
+            Write-Log ("  BITS COM API  : {0} job(s) actif(s) en cours de transfert" -f $jobCount) "DATA"
+        }
+    } catch {
+        Write-Log "  BITS COM API  : Impossible d'interroger le gestionnaire BITS ($($_.Exception.Message))" "WARN"
     }
 }
 
